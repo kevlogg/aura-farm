@@ -86,6 +86,20 @@ export interface StoreItem {
   aura_grant_amount: number;
   is_laura_exclusive: boolean;
   image_url: string;
+  badgeText?: string;
+}
+
+export interface CoinPack {
+  id: string;
+  name: string;
+  coinsBase: number;
+  coinsBonus: number;
+  totalCoins: number;
+  priceUsd: number;
+  priceArs: number;
+  badgeText: string;
+  isPopular: boolean;
+  colorGradient: string;
 }
 
 export interface UserReport {
