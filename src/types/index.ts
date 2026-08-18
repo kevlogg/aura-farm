@@ -8,6 +8,15 @@ export type DuelStatus = 'PENDING' | 'ACTIVE' | 'FINISHED';
 
 export type StoreItemType = 'SKIN_AVATAR' | 'RECOVERY_PACK' | 'BOOSTER' | 'CLEANSE';
 
+export type ReportReason =
+  | 'MINORS_RISK'
+  | 'BULLYING_HARASSMENT'
+  | 'HATE_SPEECH_POLITICS'
+  | 'NSFW_EXPLICIT'
+  | 'SPAM_FRAUD';
+
+export type ReportStatus = 'PENDING' | 'REVIEWED' | 'ACTION_TAKEN' | 'DISMISSED';
+
 export interface UserProfile {
   id: string;
   username: string;
@@ -77,4 +86,14 @@ export interface StoreItem {
   aura_grant_amount: number;
   is_laura_exclusive: boolean;
   image_url: string;
+}
+
+export interface UserReport {
+  id: string;
+  reporter_id: string;
+  post_id: string;
+  reason: ReportReason;
+  details?: string;
+  status: ReportStatus;
+  created_at: string;
 }
