@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Reglas para Colección de Usuarios
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Reglas para Colección de Posts
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Reglas para Colección de Votos
+    match /votes/{voteId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+    }
+
+    // Reglas para Colección de Duelos 1v1
+    match /duels/{duelId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+    }
+
+    // Reglas para Colección de Reportes de Moderación
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null && request.auth.uid == resource.data.reporterId;
+    }
+  }
+}

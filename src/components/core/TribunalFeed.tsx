@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuraCard } from './AuraCard';
-import { Post, VoteType } from '@/types';
+import { Post, VoteType, ReportReason } from '@/types';
 import { Flame, RefreshCw, Sparkles } from 'lucide-react';
+import { fetchTribunalFeed } from '@/lib/firebase/services/posts';
+import { processAuraVoteFirestore } from '@/lib/firebase/services/votes';
+import { submitReportFirestore } from '@/lib/firebase/services/reports';
 
 interface TribunalFeedProps {
   initialPosts?: Post[];
@@ -70,17 +73,44 @@ export const TribunalFeed: React.FC<TribunalFeedProps> = ({
 }) => {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleVote = (postId: string, type: VoteType) => {
+  useEffect(() => {
+    async function loadFirestorePosts() {
+      setIsLoading(true);
+      const firestorePosts = await fetchTribunalFeed(15);
+      if (firestorePosts && firestorePosts.length > 0) {
+        setPosts(firestorePosts);
+      }
+      setIsLoading(false);
+    }
+    loadFirestorePosts();
+  }, []);
+
+  const handleVote = async (postId: string, type: VoteType) => {
     if (onVoteCast) {
       onVoteCast(postId, type);
     }
-    // Avanza al siguiente clip en la pila
+
+    // Process vote in Firebase Firestore asynchronously
+    processAuraVoteFirestore('current-user-uid', postId, type).catch(console.error);
+
+    // Advance stack index
     setCurrentIndex((prev) => prev + 1);
   };
 
-  const resetFeed = () => {
+  const handleReport = (postId: string, reason: ReportReason, details?: string) => {
+    submitReportFirestore('current-user-uid', postId, reason, details).catch(console.error);
+  };
+
+  const resetFeed = async () => {
+    setIsLoading(true);
+    const firestorePosts = await fetchTribunalFeed(15);
+    if (firestorePosts && firestorePosts.length > 0) {
+      setPosts(firestorePosts);
+    }
     setCurrentIndex(0);
+    setIsLoading(false);
   };
 
   const isCompleted = currentIndex >= posts.length;
@@ -94,6 +124,7 @@ export const TribunalFeed: React.FC<TribunalFeedProps> = ({
               key={post.id}
               post={post}
               onVote={handleVote}
+              onReport={handleReport}
               isFront={idx === 0}
             />
           ))}
@@ -106,14 +137,15 @@ export const TribunalFeed: React.FC<TribunalFeedProps> = ({
           <div>
             <h3 className="text-xl font-black text-white">¡Tribunal Completado!</h3>
             <p className="text-zinc-400 text-xs mt-1">
-              Has juzgado todos los Aura Moves disponibles por ahora. Ganaste +{posts.length} Aura Coins por tus votos de hoy.
+              Has juzgado todos los Aura Moves disponibles. Ganaste +{posts.length} Aura Coins por tus votos.
             </p>
           </div>
           <button
             onClick={resetFeed}
+            disabled={isLoading}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 font-bold text-white shadow-lg hover:scale-105 active:scale-95 transition-all"
           >
-            <RefreshCw className="w-4 h-4" /> Recargar Feed
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} /> Recargar Feed
           </button>
         </div>
       )}
